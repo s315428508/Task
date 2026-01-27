@@ -185,12 +185,28 @@
             render();
         }
 
+        // 找到这一段进行修改
         document.getElementById('new-task').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
+                // 1. 添加任务
                 tasks.push({ id: Date.now(), text: e.target.value, status: 'memo', doneTime: null });
-                e.target.value = '';
+
+                // 2. 清空输入框内容
+                const inputField = e.target;
+                inputField.value = '';
+
+                // 3. 强制保持焦点 (重点)
+                // 在某些 iOS 版本中，直接 focus 可能会失效，使用 setTimeout 确保在 DOM 渲染后重新聚焦
+                setTimeout(() => {
+                    inputField.focus();
+                }, 10);
+
+                // 4. 保存并渲染
                 saveData();
                 render();
+
+                // 5. 触感反馈（可选：添加任务成功的轻微震动）
+                if (window.navigator.vibrate) window.navigator.vibrate(10);
             }
         });
 
