@@ -186,27 +186,25 @@
         }
 
         // 找到这一段进行修改
+        // 修改输入框的事件监听逻辑
         document.getElementById('new-task').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
-                // 1. 添加任务
-                tasks.push({ id: Date.now(), text: e.target.value, status: 'memo', doneTime: null });
+                // 1. 获取输入内容并添加任务
+                const text = e.target.value;
+                tasks.push({ id: Date.now(), text: text, status: 'memo', doneTime: null });
 
-                // 2. 清空输入框内容
-                const inputField = e.target;
-                inputField.value = '';
+                // 2. 清空输入框
+                e.target.value = '';
 
-                // 3. 强制保持焦点 (重点)
-                // 在某些 iOS 版本中，直接 focus 可能会失效，使用 setTimeout 确保在 DOM 渲染后重新聚焦
-                setTimeout(() => {
-                    inputField.focus();
-                }, 10);
+                // 3. 关键：强制让输入框失去焦点，触发键盘收起
+                e.target.blur();
 
-                // 4. 保存并渲染
+                // 4. 保存并渲染界面
                 saveData();
                 render();
 
-                // 5. 触感反馈（可选：添加任务成功的轻微震动）
-                if (window.navigator.vibrate) window.navigator.vibrate(10);
+                // 5. 触感反馈（给用户一个成功的确认感）
+                if (window.navigator.vibrate) window.navigator.vibrate(15);
             }
         });
 
