@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<!-- 声明文档类型为 HTML5 -->
+<html lang="zh-CN">
+<!-- 设置网页语言为中文 -->
+
+<head>
+    <!-- 设置字符编码为 UTF-8，支持中文 -->
+    <meta charset="UTF-8">
+    <!-- 移动端适配：防止缩放，确保在手机上 1:1 显示，viewport-fit=cover 适配刘海屏 -->
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 网页标题 -->
+    <title>极简待办</title>
+    <!-- 苹果 WebApp 全屏模式 -->
+    <link rel="apple-touch-icon" href="logo_v2.png">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- 苹果导航栏样式 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <style>
+        /* 1. CSS 变量定义：方便全局修改主题颜色 */
+        :root {
+            --bg-color: #f2f2f7;
+            /* 页面背景色（淡灰色） */
+            --card-bg: #ffffff;
+            /* 卡片背景色（纯白色） */
+            --accent-color: #007aff;
+            /* 强调色（iOS 蓝色） */
+        }
+
+        /* 2. 全局重置样式 */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            /* 去除 iOS 点击时的蓝色高亮阴影 */
+            box-sizing: border-box;
+            /* 盒模型：padding 不会撑大容器宽度 */
+        }
+
+        /* 3. 页面大体布局 */
+        body {
+            font-family: -apple-system, system-ui;
+            /* 调用系统默认字体 */
+            background-color: var(--bg-color);
+            /* 应用背景色变量 */
+            margin: 0;
+            /* 去除边距 */
+            height: 100vh;
+            /* 高度充满屏幕 */
+            overflow: hidden;
+            /* 防止整个页面随键盘/内容乱乱滚动 */
+            display: flex;
+            flex-direction: column;
+            /* 垂直布局：Header + 列表 + 底部栏 */
+        }
+
+        /* 4. 头部标题样式 */
+        header {
+            /* padding 计算：安全区域(刘海) + 20px 边距 */
+            padding: calc(env(safe-area-inset-top) + 20px) 20px 10px;
+            font-size: 32px;
+            /* 大标题 */
+            font-weight: 800;
+            /* 加粗 */
+            background: var(--bg-color);
+            position: sticky;
+            /* 吸顶效果 */
+            top: 0;
+            z-index: 100;
+            /* 确保在最上层 */
+        }
+
+        /* 5. 任务列表容器 */
+        .list-container {
+            flex: 1;
+            /* 自动占满除了 Header 和 Footer 的空间 */
+            overflow-y: auto;
+            /* 只有这个区域可以纵向滚动 */
+            padding: 10px 20px 160px;
+            /* 底部 padding 大一点，防止被输入框遮挡 */
+        }
+
+        /* 6. 单个任务卡片样式 */
+        .task-card {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 14px;
+            /* 圆角 */
+            margin-bottom: 12px;
+            /* 卡片间距 */
+            font-size: 17px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            /* 极细微阴影 */
+            /* 关键：Q 弹缩放动画效果 */
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            user-select: none;
+            /* 禁止选中文本，让点击感更像原生 App */
+        }
+
+        /* 7. 卡片按下时的视觉反馈 */
+        .task-card:active {
+            transform: scale(0.94);
+            /* 稍微缩小 6% */
+            background-color: #f9f9f9;
+            /* 色调变暗一点点 */
+        }
+
+        /* 8. 底部输入区域容器 */
+        .input-area {
+            position: fixed;
+            /* 固定在屏幕底部上方 */
+            bottom: 85px;
+            /* 避开最底部的 TabBar */
+            left: 0;
+            right: 0;
+            padding: 15px 20px;
+            background: var(--card-bg);
+            border-top: 0.5px solid #d1d1d6;
+            /* 顶部分割线 */
+            display: flex;
+            z-index: 10;
+        }
+
+        /* 9. 输入框样式 */
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            /* 去除边框 */
+            background: #f2f2f7;
+            /* 灰色背景 */
+            font-size: 16px;
+            outline: none;
+            /* 去除点击时的蓝色框 */
+        }
+
+        /* 10. 底部导航栏容器 */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 85px;
+            /* iOS 标准底部栏高度 */
+            background: rgba(249, 249, 249, 0.94);
+            /* 苹果经典的毛玻璃效果背景 */
+            backdrop-filter: blur(20px);
+            /* 背景模糊 */
+            display: flex;
+            padding-bottom: env(safe-area-inset-bottom);
+            /* 适配底部小横条 */
+            border-top: 0.5px solid #d1d1d6;
+        }
+
+        /* 11. 导航栏单个按钮 */
+        .tab-item {
+            flex: 1;
+            /* 等分三份 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            /* 文字大小 */
+            color: #8e8e93;
+            /* 默认灰色 */
+            gap: 4px;
+            /* 图标与文字的间距 */
+        }
+
+        /* 12. 导航栏图标样式 */
+        .tab-item b {
+            font-size: 20px;
+            font-style: normal;
+        }
+
+        /* 13. 导航栏激活状态样式 */
+        .tab-item.active {
+            color: var(--accent-color);
+            /* 变成深蓝色 */
+        }
+    </style>
+</head>
+
+<body ontouchstart="">
+    <!-- ontouchstart="" 解决手机端 :active 伪类失效的问题 -->
+
+    <!-- 顶栏标题 -->
+    <header id="page-title">备忘清单</header>
+
+    <!-- 任务展示区域（由 JS 动态生成卡片插入此处） -->
+    <div class="list-container" id="task-list"></div>
+
+    <!-- 输入框区域 -->
+    <div class="input-area" id="input-box">
+        <input type="text" id="new-task" placeholder="添加新备忘..." enterkeyhint="done">
+        <!-- enterkeyhint="done" 使手机键盘的回车键显示“完成” -->
+    </div>
+
+    <!-- 底部功能切换栏 -->
+    <nav class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('memo')"><b>📝</b>备忘</div>
+        <div class="tab-item" onclick="switchTab('doing')"><b>🏃</b>进行中</div>
+        <div class="tab-item" onclick="switchTab('done')"><b>✅</b>已完成</div>
+    </nav>
+
+    <script>
+        /* 1. 初始化数据：从浏览器缓存读取，如果没有则为空数组 */
+        let tasks = JSON.parse(localStorage.getItem('my_tasks')) || [];
+        /* 2. 当前所在的标签页：'memo'(备忘), 'doing'(进行中), 'done'(已完成) */
+        let currentTab = 'memo';
+
+        /* 3. 保存数据到浏览器缓存 */
+        function saveData() {
+            localStorage.setItem('my_tasks', JSON.stringify(tasks));
+        }
+
+        /* 4. 渲染函数：根据当前数据和标签，刷新页面显示 */
+        function render() {
+            const list = document.getElementById('task-list');
+            const inputArea = document.getElementById('input-box');
+
+            // a. 更新标题文字
+            document.getElementById('page-title').innerText = {
+                memo: '备忘清单',
+                doing: '进行中',
+                done: '已完成'
+            }[currentTab];
+
+            // b. 只有在“备忘”栏才显示输入框
+            inputArea.style.display = currentTab === 'memo' ? 'flex' : 'none';
+
+            // c. 过滤任务：只找出属于当前状态 且 内容不为空的任务
+            const filteredTasks = tasks.filter(t => t.status === currentTab && t.text && t.text.trim() !== "");
+
+            // d. 映射为 HTML 字符串：把每个任务变成一个 <div class="task-card">...</div>
+            list.innerHTML = filteredTasks
+                .map(t => `<div class="task-card" onclick="moveTask(${t.id})">${t.text}</div>`)
+                .join('');
+
+            // e. 更新底部导航栏的激活颜色：循环三个 Tab，对比 currentTab
+            document.querySelectorAll('.tab-item').forEach((el, i) => {
+                el.classList.toggle('active', ['memo', 'doing', 'done'][i] === currentTab);
+            });
+        }
+
+        /* 5. 任务流转逻辑：点击卡片后，改变其状态 */
+        function moveTask(id) {
+            // 找到被点击的那个任务对象
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            // 逻辑：备忘 -> 进行中 -> 已完成 -> 进行中 (循环)
+            if (currentTab === 'memo') {
+                task.status = 'doing';
+            } else if (currentTab === 'doing') {
+                task.status = 'done';
+                task.doneTime = Date.now(); // 记录完成时间，用于 3 天后自动清理
+            } else if (currentTab === 'done') {
+                task.status = 'doing';
+                task.doneTime = null;       // 回滚到进行中，清空完成时间
+            }
+            saveData(); // 保存修改
+            render();   // 刷新界面
+        }
+
+        /* 6. 切换底部标签页 */
+        function switchTab(tab) {
+            currentTab = tab;
+            render();
+        }
+
+        /* 7. 输入框回车监听逻辑 */
+        document.getElementById('new-task').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') { // 如果敲了回车
+                const content = e.target.value.trim(); // 获取内容并去除两端空格
+                if (content) {
+                    // 在 tasks 数组里新增一个任务对象
+                    tasks.push({
+                        id: Date.now(),      // 使用当前时间戳作为唯一 ID
+                        text: content,       // 任务正文
+                        status: 'memo',      // 初始状态是备忘栏
+                        doneTime: null       // 初始没有完成时间
+                    });
+                    e.target.value = '';    // 清空输入框
+                    e.target.blur();        // 输入框收起键盘
+                    window.scrollTo(0, 0);  // 页面回到顶部
+                    saveData();
+                    render();
+                }
+            }
+        });
+
+        /* 8. 自动清理逻辑：清理 3 天前已完成的任务 */
+        function autoClean() {
+            const threeDays = 10 * 1000; // 3 天的毫秒数
+            const now = Date.now();
+            const initialLength = tasks.length;
+
+            // 过滤：排除掉 (状态是 done 且 超过 3 天) 的任务
+            tasks = tasks.filter(t => !(t.status === 'done' && t.doneTime && (now - t.doneTime > threeDays)));
+
+            // 如果数量有变化，说明有任务被清理了，刷新一次
+            if (tasks.length !== initialLength) {
+                saveData();
+                render();
+            }
+        }
+
+        /* 9. 定时器：每 1 分钟检查一次是否需要清理旧数据 */
+        setInterval(autoClean, 1000);
+
+        /* 10. 首次打开页面时，执行一次渲染 */
+        render();
+    </script>
+</body>
+
+</html>
