@@ -3,8 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>极简待办</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="极简待办">
+
     <style>
         :root {
             --bg-color: #f2f2f7;
@@ -12,92 +18,105 @@
             --accent-color: #007aff;
         }
 
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui;
             background-color: var(--bg-color);
             margin: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            padding-top: env(safe-area-inset-top);
+            /* 适配刘海屏 */
         }
 
-        /* 标题栏 */
         header {
-            padding: 20px 16px 10px;
-            background: var(--bg-color);
-            font-size: 28px;
-            font-weight: bold;
+            padding: 20px 20px 10px;
+            font-size: 32px;
+            font-weight: 800;
+            color: #000;
         }
 
-        /* 列表区域 */
         .list-container {
             flex: 1;
             overflow-y: auto;
-            padding: 0 16px;
-            padding-bottom: 100px;
+            padding: 10px 20px 150px;
         }
 
         .task-card {
             background: var(--card-bg);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            font-size: 17px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
         }
 
         .task-card:active {
-            transform: scale(0.97);
-            background: #f9f9f9;
+            transform: scale(0.96);
+            background: #ebebeb;
         }
 
-        /* 底部导航 */
-        .tab-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 30px;
-            border-top: 1px solid #ddd;
-        }
-
-        .tab-item {
-            text-align: center;
-            font-size: 12px;
-            color: #8e8e93;
-            flex: 1;
-        }
-
-        .tab-item.active {
-            color: var(--accent-color);
-        }
-
-        /* 底部常驻输入框 */
         .input-area {
             position: fixed;
-            bottom: 75px;
+            bottom: 85px;
             left: 0;
             right: 0;
-            padding: 10px 16px;
+            padding: 15px 20px;
             background: var(--card-bg);
+            border-top: 0.5px solid #d1d1d6;
             display: flex;
-            gap: 10px;
-            border-top: 1px solid #eee;
+            gap: 12px;
+            z-index: 10;
         }
 
         input {
             flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            background: #f2f2f7;
             font-size: 16px;
             outline: none;
+        }
+
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 85px;
+            background: rgba(249, 249, 249, 0.94);
+            backdrop-filter: blur(20px);
+            display: flex;
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 0.5px solid #d1d1d6;
+        }
+
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #8e8e93;
+            gap: 4px;
+        }
+
+        .tab-item b {
+            font-size: 20px;
+            font-style: normal;
+        }
+
+        .tab-item.active {
+            color: var(--accent-color);
         }
     </style>
 </head>
@@ -106,50 +125,46 @@
 
     <header id="page-title">备忘清单</header>
 
-    <div class="list-container" id="task-list">
-    </div>
+    <div class="list-container" id="task-list"></div>
 
     <div class="input-area" id="input-box">
-        <input type="text" id="new-task" placeholder="想做点什么？">
+        <input type="text" id="new-task" placeholder="添加新备忘..." enterkeyhint="done">
     </div>
 
     <nav class="tab-bar">
-        <div class="tab-item active" onclick="switchTab('memo')">📝<br>备忘</div>
-        <div class="tab-item" onclick="switchTab('doing')">🏃<br>进行中</div>
-        <div class="tab-item" onclick="switchTab('done')">✅<br>已完成</div>
+        <div class="tab-item active" onclick="switchTab('memo')"><b>📝</b>备忘</div>
+        <div class="tab-item" onclick="switchTab('doing')"><b>🏃</b>进行中</div>
+        <div class="tab-item" onclick="switchTab('done')"><b>✅</b>已完成</div>
     </nav>
 
     <script>
-        let tasks = [
-            { id: 1, text: "孩子机票", status: "memo", doneTime: null },
-            { id: 2, text: "核对成本策划", status: "doing", doneTime: null }
-        ];
+        // 初始从本地加载数据
+        let tasks = JSON.parse(localStorage.getItem('my_tasks')) || [];
         let currentTab = 'memo';
+
+        function saveData() {
+            localStorage.setItem('my_tasks', JSON.stringify(tasks));
+        }
 
         function render() {
             const list = document.getElementById('task-list');
-            const title = document.getElementById('page-title');
             const inputArea = document.getElementById('input-box');
+            document.getElementById('page-title').innerText = { memo: '备忘清单', doing: '进行中', done: '已完成' }[currentTab];
 
-            // 更新标题和输入框显示
-            title.innerText = { memo: '备忘清单', doing: '进行中', done: '已完成' }[currentTab];
             inputArea.style.display = currentTab === 'memo' ? 'flex' : 'none';
 
-            // 过滤并渲染任务
             list.innerHTML = tasks
                 .filter(t => t.status === currentTab)
                 .map(t => `<div class="task-card" onclick="moveTask(${t.id})">${t.text}</div>`)
                 .join('');
 
-            // 更新 Tab 样式
             document.querySelectorAll('.tab-item').forEach((el, i) => {
                 el.classList.toggle('active', ['memo', 'doing', 'done'][i] === currentTab);
             });
         }
 
         function moveTask(id) {
-            // 触感反馈 (需要真机支持)
-            if (navigator.vibrate) navigator.vibrate(10);
+            if (window.navigator.vibrate) window.navigator.vibrate(15);
 
             const task = tasks.find(t => t.id === id);
             if (currentTab === 'memo') task.status = 'doing';
@@ -157,8 +172,11 @@
                 task.status = 'done';
                 task.doneTime = Date.now();
             }
-            else if (currentTab === 'done') task.status = 'doing'; // 误触找回
-
+            else if (currentTab === 'done') {
+                task.status = 'doing';
+                task.doneTime = null;
+            }
+            saveData();
             render();
         }
 
@@ -171,16 +189,20 @@
             if (e.key === 'Enter' && e.target.value.trim()) {
                 tasks.push({ id: Date.now(), text: e.target.value, status: 'memo', doneTime: null });
                 e.target.value = '';
+                saveData();
                 render();
             }
         });
 
-        // 模拟3天自动物理粉碎
-        setInterval(() => {
+        // 自动物理粉碎逻辑（3天）
+        function autoClean() {
             const threeDays = 3 * 24 * 60 * 60 * 1000;
-            tasks = tasks.filter(t => !(t.status === 'done' && (Date.now() - t.doneTime > threeDays)));
-        }, 60000);
+            const now = Date.now();
+            tasks = tasks.filter(t => !(t.status === 'done' && t.doneTime && (now - t.doneTime > threeDays)));
+            saveData();
+        }
 
+        setInterval(autoClean, 60000); // 每分钟检查一次
         render();
     </script>
 </body>
