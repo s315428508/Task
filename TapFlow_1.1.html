@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<!-- 声明文档类型为 HTML5 -->
+<html lang="zh-CN">
+<!-- 设置网页语言为中文 -->
+
+<head>
+    <!-- 设置字符编码为 UTF-8，支持中文 -->
+    <meta charset="UTF-8">
+    <!-- 移动端适配：防止缩放，确保在手机上 1:1 显示，viewport-fit=cover 适配刘海屏 -->
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 网页标题 -->
+    <title>TapFlow</title>
+    <header id="page-title" onclick="showAbout()">TapFlow</header>
+    <!-- 苹果 WebApp 全屏模式 -->
+    <link rel="apple-touch-icon" href="https://s315428508.github.io/Task/icon.png">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="https://s315428508.github.io/Task/icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- 苹果导航栏样式 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <style>
+        :root {
+            /* 浅色模式变量 */
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-color: #000000;
+            --accent-color: #007aff;
+            --border-color: #d1d1d6;
+            --input-bg: #f2f2f7;
+        }
+
+        /* 核心：自动深色模式适配 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                /* 纯黑背景，更省电 */
+                --card-bg: #1c1c1e;
+                /* 深灰色卡片 */
+                --text-color: #ffffff;
+                /* 白色文字 */
+                --accent-color: #0a84ff;
+                /* 亮蓝色 */
+                --border-color: #38383a;
+                /* 深色边框 */
+                --input-bg: #2c2c2e;
+                /* 输入框背景 */
+            }
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, system-ui;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease;
+            /* 切换时有平滑过渡 */
+        }
+
+        header {
+            padding: calc(env(safe-area-inset-top) + 20px) 20px 10px;
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--bg-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 20px 160px;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            font-size: 17px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .task-card:active {
+            transform: scale(0.94);
+            filter: brightness(0.8);
+        }
+
+        .input-area {
+            position: fixed;
+            bottom: 85px;
+            left: 0;
+            right: 0;
+            padding: 15px 20px;
+            background: var(--card-bg);
+            border-top: 0.5px solid var(--border-color);
+            display: flex;
+            z-index: 10;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            outline: none;
+        }
+
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 85px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            display: flex;
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 0.5px solid var(--border-color);
+            opacity: 0.94;
+        }
+
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #8e8e93;
+            gap: 4px;
+        }
+
+        .tab-item b {
+            font-size: 20px;
+            font-style: normal;
+        }
+
+        .tab-item.active {
+            color: var(--accent-color);
+        }
+
+        /* 关于页面遮罩层 */
+        .about-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: none;
+            /* 默认隐藏 */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* 关于页面卡片 */
+        .about-card {
+            background: var(--card-bg);
+            color: var(--text-color);
+            width: 80%;
+            max-width: 300px;
+            padding: 30px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .about-card h2 {
+            margin: 0 0 10px;
+            font-size: 24px;
+        }
+
+        .about-card p {
+            font-size: 14px;
+            opacity: 0.7;
+            line-height: 1.6;
+        }
+
+        .version-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--accent-color);
+            color: #fff;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body ontouchstart="">
+    <!-- ontouchstart="" 解决手机端 :active 伪类失效的问题 -->
+
+    <!-- 顶栏标题 -->
+
+
+    <!-- 任务展示区域（由 JS 动态生成卡片插入此处） -->
+    <div class="list-container" id="task-list"></div>
+
+    <!-- 输入框区域 -->
+    <div class="input-area" id="input-box">
+        <input type="text" id="new-task" placeholder="添加新备忘..." enterkeyhint="done">
+        <!-- enterkeyhint="done" 使手机键盘的回车键显示“完成” -->
+    </div>
+
+    <!-- 底部功能切换栏 -->
+    <nav class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('memo')"><b>📝</b>备忘</div>
+        <div class="tab-item" onclick="switchTab('doing')"><b>🏃</b>进行中</div>
+        <div class="tab-item" onclick="switchTab('done')"><b>✅</b>已完成</div>
+    </nav>
+
+    <script>
+        /* 1. 初始化数据：从浏览器缓存读取，如果没有则为空数组 */
+        let tasks = JSON.parse(localStorage.getItem('my_tasks')) || [];
+        /* 2. 当前所在的标签页：'memo'(备忘), 'doing'(进行中), 'done'(已完成) */
+        let currentTab = 'memo';
+
+        /* 3. 保存数据到浏览器缓存 */
+        function saveData() {
+            localStorage.setItem('my_tasks', JSON.stringify(tasks));
+        }
+
+        /* 4. 渲染函数：根据当前数据和标签，刷新页面显示 */
+        function render() {
+            const list = document.getElementById('task-list');
+            const inputArea = document.getElementById('input-box');
+
+            // a. 更新标题文字
+            document.getElementById('page-title').innerText = {
+                memo: '备忘清单',
+                doing: '进行中',
+                done: '已完成'
+            }[currentTab];
+
+            // b. 只有在“备忘”栏才显示输入框
+            inputArea.style.display = currentTab === 'memo' ? 'flex' : 'none';
+
+            // c. 过滤任务：只找出属于当前状态 且 内容不为空的任务
+            const filteredTasks = tasks.filter(t => t.status === currentTab && t.text && t.text.trim() !== "");
+
+            // d. 映射为 HTML 字符串：把每个任务变成一个 <div class="task-card">...</div>
+            list.innerHTML = filteredTasks
+                .map(t => `<div class="task-card" onclick="moveTask(${t.id})">${t.text}</div>`)
+                .join('');
+
+            // e. 更新底部导航栏的激活颜色：循环三个 Tab，对比 currentTab
+            document.querySelectorAll('.tab-item').forEach((el, i) => {
+                el.classList.toggle('active', ['memo', 'doing', 'done'][i] === currentTab);
+            });
+        }
+
+        /* 5. 任务流转逻辑：点击卡片后，改变其状态 */
+        function moveTask(id) {
+            // 找到被点击的那个任务对象
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            // 逻辑：备忘 -> 进行中 -> 已完成 -> 进行中 (循环)
+            if (currentTab === 'memo') {
+                task.status = 'doing';
+            } else if (currentTab === 'doing') {
+                task.status = 'done';
+                task.doneTime = Date.now(); // 记录完成时间，用于 3 天后自动清理
+            } else if (currentTab === 'done') {
+                task.status = 'doing';
+                task.doneTime = null;       // 回滚到进行中，清空完成时间
+            }
+            saveData(); // 保存修改
+            render();   // 刷新界面
+        }
+
+        /* 6. 切换底部标签页 */
+        function switchTab(tab) {
+            currentTab = tab;
+            render();
+        }
+
+        /* 7. 输入框回车监听逻辑 */
+        document.getElementById('new-task').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') { // 如果敲了回车
+                const content = e.target.value.trim(); // 获取内容并去除两端空格
+                if (content) {
+                    // 在 tasks 数组里新增一个任务对象
+                    tasks.push({
+                        id: Date.now(),      // 使用当前时间戳作为唯一 ID
+                        text: content,       // 任务正文
+                        status: 'memo',      // 初始状态是备忘栏
+                        doneTime: null       // 初始没有完成时间
+                    });
+                    e.target.value = '';    // 清空输入框
+                    e.target.blur();        // 输入框收起键盘
+                    window.scrollTo(0, 0);  // 页面回到顶部
+                    saveData();
+                    render();
+                }
+            }
+        });
+
+        /* 8. 自动清理逻辑：清理 3 天前已完成的任务 */
+        function autoClean() {
+            const threeDays = 3 * 24 * 60 * 60 * 1000; // 3 天的毫秒数
+            const now = Date.now();
+            const initialLength = tasks.length;
+
+            // 过滤：排除掉 (状态是 done 且 超过 3 天) 的任务
+            tasks = tasks.filter(t => !(t.status === 'done' && t.doneTime && (now - t.doneTime > threeDays)));
+
+            // 如果数量有变化，说明有任务被清理了，刷新一次
+            if (tasks.length !== initialLength) {
+                saveData();
+                render();
+            }
+        }
+
+        /* 9. 定时器：每 1 分钟检查一次是否需要清理旧数据 */
+        setInterval(autoClean, 60000);
+
+        /* 10. 首次打开页面时，执行一次渲染 */
+        render();
+        function showAbout() {
+            document.getElementById('about-page').style.display = 'flex';
+        }
+
+        function closeAbout() {
+            document.getElementById('about-page').style.display = 'none';
+        }
+    </script>
+    <div class="about-overlay" id="about-page" onclick="closeAbout()">
+        <div class="about-card" onclick="event.stopPropagation()">
+            <h2>TapFlow 点流</h2>
+            <span class="version-tag">Version 1.0</span>
+            <p>让任务像水一样流转。<br>点击文字切换状态，<br>已完成事项 3 日后自动粉碎。</p>
+            <hr style="border:0; border-top:0.5px solid var(--border-color); margin:20px 0;">
+            <p style="font-size: 12px;">Made with on Windows <br> for iPhone User <br> Love U Dei</p>
+        </div>
+    </div>
+</body>
+
+</html>
