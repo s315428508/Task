@@ -32,6 +32,11 @@
             flex-direction: column;
             padding-top: env(safe-area-inset-top);
             /* 适配刘海屏 */
+            /* 确保页面高度撑满，不会产生多余的空白晃动 */
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
 
         header {
@@ -39,6 +44,11 @@
             font-size: 32px;
             font-weight: 800;
             color: #000;
+            /* 增加一个固定的背景，防止向上偏移时与状态栏重叠太难看 */
+            background: var(--bg-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .list-container {
@@ -187,25 +197,33 @@
 
         // 找到这一段进行修改
         // 修改输入框的事件监听逻辑
+        // 在输入框的事件监听中加入回弹逻辑
         document.getElementById('new-task').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
-                // 1. 获取输入内容并添加任务
                 const text = e.target.value;
                 tasks.push({ id: Date.now(), text: text, status: 'memo', doneTime: null });
 
-                // 2. 清空输入框
                 e.target.value = '';
 
-                // 3. 关键：强制让输入框失去焦点，触发键盘收起
+                // 1. 强制失去焦点（收起键盘）
                 e.target.blur();
 
-                // 4. 保存并渲染界面
+                // 2. 核心：强制页面回滚到顶部，解决标题被遮挡问题
+                // 使用 scrollTo 0,0 可以瞬间让偏移的页面复位
+                window.scrollTo(0, 0);
+
                 saveData();
                 render();
 
-                // 5. 触感反馈（给用户一个成功的确认感）
                 if (window.navigator.vibrate) window.navigator.vibrate(15);
             }
+        });
+
+        // 额外保险：当键盘因用户点击页面其他地方而收起时，也触发回位
+        document.getElementById('new-task').addEventListener('blur', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 50); // 微小延迟确保键盘已开始收缩
         });
 
         // 自动物理粉碎逻辑（3天）
