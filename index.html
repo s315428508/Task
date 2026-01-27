@@ -174,9 +174,13 @@
         }
 
         function moveTask(id) {
-            if (window.navigator.vibrate) window.navigator.vibrate(15);
+            // 强制触发震动 (iOS PWA 环境下更灵敏的写法)
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(20); // 震动 20 毫秒，短促有力
+            }
 
             const task = tasks.find(t => t.id === id);
+            // ... 剩下的逻辑保持不变 ...
             if (currentTab === 'memo') task.status = 'doing';
             else if (currentTab === 'doing') {
                 task.status = 'done';
@@ -200,6 +204,15 @@
         // 在输入框的事件监听中加入回弹逻辑
         document.getElementById('new-task').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
+                // 在逻辑最开始就震动，确保由点击事件直接触发
+                if (window.navigator.vibrate) window.navigator.vibrate(30);
+
+                tasks.push({ id: Date.now(), text: e.target.value, status: 'memo', doneTime: null });
+                e.target.value = '';
+                e.target.blur();
+                window.scrollTo(0, 0);
+                saveData();
+                render();
                 const text = e.target.value;
                 tasks.push({ id: Date.now(), text: text, status: 'memo', doneTime: null });
 
