@@ -60,12 +60,13 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            height: 100vh;
+            height: 100%; 
+            width: 100%;
+            position: fixed;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            transition: background-color 0.3s ease;
-            /* 切换时有平滑过渡 */
+           
         }
 
         header {
@@ -80,7 +81,8 @@
 
         .list-container {
             flex: 1;
-            overflow-y: auto;
+            overflow-y: scroll; /* 强制开启纵向滚动 */
+            -webkit-overflow-scrolling: touch; /* 开启 iOS 原生滚动回弹手感 */
             padding: 10px 20px 160px;
         }
 
@@ -279,6 +281,33 @@
             // e. 更新底部导航栏的激活颜色：循环三个 Tab，对比 currentTab
             document.querySelectorAll('.tab-item').forEach((el, i) => {
                 el.classList.toggle('active', ['memo', 'doing', 'done'][i] === currentTab);
+            });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', () => {
+                    const height = window.visualViewport.height;
+                    const viewportHeight = window.innerHeight;
+                    if (height < viewportHeight) {
+                        document.body.style.height = `${height}px`;
+                        // 延迟一瞬滚动，确保键盘已经完全弹起
+                        setTimeout(() => {
+                            document.getElementById('new-task').scrollIntoView({ block: "end", behavior: "smooth" });
+                        }, 100);
+                    } else {
+                        document.body.style.height = '100%';
+                    }
+                });
+            }
+            document.getElementById('new-task').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const content = e.target.value.trim();
+                    if (content) {
+                        tasks.push({ id: Date.now(), text: content, status: 'memo', doneTime: null });
+                        e.target.value = '';
+                        e.target.blur(); // 强制收起键盘
+                        saveData();
+                        render();
+                    }
+                }
             });
         }
 
